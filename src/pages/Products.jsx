@@ -119,10 +119,38 @@ const Products = () => {
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
     try {
-      await addToCart(product, 1);
+      // await addToCart(product, 1);
+
+      const processOrder = (orderData) => {
+        const { customer, items, shipping } = orderData;
+        
+        // Simulate order processing
+        const customerName = customer.name;
+        const totalItems = items.length;
+        const shippingAddress = shipping.address;
+        
+        // This will cause TypeError when customer is null
+        const orderSummary = {
+          customer: customerName,
+          itemCount: totalItems,
+          address: shippingAddress
+        };
+        
+        return orderSummary;
+      };
+      
+      const orderData = {
+        customer: null, // This will cause the error
+        items: [{ id: 1, name: 'Product A' }],
+        shipping: { address: '123 Main St' }
+      };
+      
+      const summary = processOrder(orderData);
+      console.log('Order summary:', summary);
       // Note: The snackbar is now handled by the CartContext
     } catch (error) {
       console.error('Add to cart failed:', error);
+      window.Sentry.captureException(error);
       // The error is already handled by CartContext, but we can add additional handling here if needed
     }
   };
@@ -441,7 +469,6 @@ const Products = () => {
         py: 6,
         mb: 4,
       }}>
-        <button onClick={handleCLick}>Generate Error</button>
         <Container maxWidth="xl">
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto' }}>
             <Typography 
