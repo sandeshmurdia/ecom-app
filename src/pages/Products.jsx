@@ -119,7 +119,6 @@ const Products = () => {
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
     try {
-      // await addToCart(product, 1);
 
       const processOrder = (orderData) => {
         const { customer, items, shipping } = orderData;
