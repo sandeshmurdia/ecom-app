@@ -423,6 +423,15 @@ const Products = () => {
     </Card>
   );
 
+  const handleCLick = () => {
+    try {
+      throw new Error("Generated Error")
+    } catch (err) {
+      console.log("Errpr", err)
+      window.Sentry.captureException(err);
+    }
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', background: '#fafafa' }}>
       {/* Hero Section */}
@@ -432,6 +441,7 @@ const Products = () => {
         py: 6,
         mb: 4,
       }}>
+        <button onClick={handleCLick}>Generate Error</button>
         <Container maxWidth="xl">
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto' }}>
             <Typography 
