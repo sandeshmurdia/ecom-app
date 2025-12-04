@@ -98,6 +98,7 @@ const Login = () => {
     try {
       // Attempt login
       await login(formData.email, formData.password);
+      window.zipy.identify(formData.email);
       // Navigate to products page on successful login
       navigate('/products');
     } catch (error) {

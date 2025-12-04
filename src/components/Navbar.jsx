@@ -65,6 +65,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      window.zipy.anonymize();
       handleUserMenuClose();
       navigate('/products');
     } catch (e) {

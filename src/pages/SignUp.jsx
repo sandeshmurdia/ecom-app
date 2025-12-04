@@ -119,6 +119,11 @@ const SignUp = () => {
         formData.password,
         formData.confirmPassword
       );
+
+      window.zipy.identify(formData.email, {
+        firstName: formData.name,
+        email: formData.email
+      })
       
       // Navigate to products page on successful signup
       navigate('/products');
