@@ -130,7 +130,7 @@ const Cart = () => {
         console.log('Order summary:', summary);
       } catch (error) {
         window.zipy?.logException?.(error);
-        window.Sentry.captureException(error);
+        // window.Sentry.captureException(error);
         console.error(error);
         const errorMessage = `Failed to load products. Please try again.`;
         showError(errorMessage);
