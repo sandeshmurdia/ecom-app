@@ -6,6 +6,7 @@ import { useSnackbar } from './SnackbarContext';
 const CartContext = createContext();
 
 // Custom hook to use cart context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -17,7 +18,7 @@ export const useCart = () => {
 // Cart provider component
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, _SET_LOADING] = useState(false); // setter intentionally unused
   const { showSuccess, showError } = useSnackbar();
 
   // Load cart from localStorage on app initialization
@@ -46,19 +47,15 @@ export const CartProvider = ({ children }) => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
       showError(errorMessage);
-      
-      // Make the API call that will fail
       await fetch('/api/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity })
+        body: JSON.stringify({ productId: product.id, quantity }),
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
+      eval('requestedAdditionalItem + 1');
     }
     
     // Success - add item to cart (only reaches here if fail mode is disabled)
@@ -90,18 +87,14 @@ export const CartProvider = ({ children }) => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to remove item from cart. Please try again.`;
       showError(errorMessage);
-      
-      // Make the API call that will fail
       await fetch(`/api/cart/remove/${productId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a genuine RangeError
+      new Array(-1);
     }
     
     setCartItems(prevItems => {
@@ -120,19 +113,15 @@ export const CartProvider = ({ children }) => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to update quantity. Please try again.`;
       showError(errorMessage);
-      
-      // Make the API call that will fail
       await fetch(`/api/cart/update/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity })
+        body: JSON.stringify({ quantity }),
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a genuine AbortError using DOMException
+      throw new DOMException('The operation was aborted.', 'AbortError');
     }
     
     if (quantity <= 0) {
@@ -155,18 +144,14 @@ export const CartProvider = ({ children }) => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to clear cart. Please try again.`;
       showError(errorMessage);
-      
-      // Make the API call that will fail
       await fetch('/api/cart/clear', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a genuine SecurityError DOMException
+      throw new DOMException('Cross-origin access violation', 'SecurityError');
     }
     
     // Success - clear cart (only reaches here if fail mode is disabled)

@@ -118,40 +118,20 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    try {
-
-      const processOrder = (orderData) => {
-        const { customer, items, shipping } = orderData;
-        
-        // Simulate order processing
-        const customerName = customer.name;
-        const totalItems = items.length;
-        const shippingAddress = shipping.address;
-        
-        // This will cause TypeError when customer is null
-        const orderSummary = {
-          customer: customerName,
-          itemCount: totalItems,
-          address: shippingAddress
-        };
-        
-        return orderSummary;
-      };
-      
-      const orderData = {
-        customer: null, // This will cause the error
-        items: [{ id: 1, name: 'Product A' }],
-        shipping: { address: '123 Main St' }
-      };
-      
-      const summary = processOrder(orderData);
-      console.log('Order summary:', summary);
-      // Note: The snackbar is now handled by the CartContext
-    } catch (error) {
-      console.error('Add to cart failed:', error);
-      window.Sentry.captureException(error);
-      // The error is already handled by CartContext, but we can add additional handling here if needed
+    const failModeEnabled = attemptTracker.getFailMode();
+    if (failModeEnabled) {
+      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
+      showError(errorMessage);
+      await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id, quantity: 1 }),
+      });
+      // Trigger a genuine ReferenceError via eval
+      eval('itemToBeAdded + 1');
     }
+    // Normal flow - delegate to CartContext
+    await addToCart(product);
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
@@ -169,18 +149,14 @@ const Products = () => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to search for "${newSearchTerm}". Please try again.`;
       showError(errorMessage);
-      
-      // Make the API call that will fail
       await fetch(`/api/products/search?q=${encodeURIComponent(newSearchTerm)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a genuine URIError
+      decodeURIComponent('%');
     }
     
     // Success - update search term (only reaches here if fail mode is disabled)
@@ -196,21 +172,16 @@ const Products = () => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to change category to ${newCategory}. Please try again.`;
       showError(errorMessage);
-      
       // Reset the select to the previous value to show the failure visually
       event.target.value = selectedCategory;
-      
-      // Make the API call that will fail
       await fetch(`/api/categories/${newCategory}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a DOMException (InvalidStateError)
+      throw new DOMException('Invalid state for category change', 'InvalidStateError');
     }
     
     // Success - change category (only reaches here if fail mode is disabled)
@@ -226,21 +197,16 @@ const Products = () => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to change sort to ${newSortBy}. Please try again.`;
       showError(errorMessage);
-      
       // Reset the select to the previous value to show the failure visually
       event.target.value = sortBy;
-      
-      // Make the API call that will fail
       await fetch(`/api/products/sort?sortBy=${newSortBy}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a genuine RangeError
+      new Array(-1);
     }
     
     // Success - change sort (only reaches here if fail mode is disabled)
@@ -450,14 +416,7 @@ const Products = () => {
     </Card>
   );
 
-  const handleCLick = () => {
-    try {
-      throw new Error("Generated Error")
-    } catch (err) {
-      console.log("Errpr", err)
-      window.Sentry.captureException(err);
-    }
-  }
+  // Removed unused demo click error generator to avoid linter warnings and keep code clean
 
   return (
     <Box sx={{ minHeight: '100vh', background: '#fafafa' }}>
@@ -628,19 +587,17 @@ const Products = () => {
                       
                       // Generate error based on checkbox flag in navbar
                       if (failModeEnabled) {
-                        // Make a real API call that will fail
                         const errorMessage = `Failed to change view mode to grid. Please try again.`;
                         showError(errorMessage);
-                        
-                        // Make the API call that will fail
-                        await fetch('/api/products/view-mode', {
+                        const controller = new AbortController();
+                        const request = fetch('/api/products/view-mode', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ mode: 'grid' })
+                          body: JSON.stringify({ mode: 'grid' }),
+                          signal: controller.signal,
                         });
-                        
-                        // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-                        throw new Error(errorMessage);
+                        controller.abort(); // Trigger AbortError
+                        await request;
                       }
                       
                       // Success - change view mode (only reaches here if fail mode is disabled)
@@ -664,19 +621,15 @@ const Products = () => {
                       
                       // Generate error based on checkbox flag in navbar
                       if (failModeEnabled) {
-                        // Make a real API call that will fail
                         const errorMessage = `Failed to change view mode to list. Please try again.`;
                         showError(errorMessage);
-                        
-                        // Make the API call that will fail
                         await fetch('/api/products/view-mode', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ mode: 'list' })
+                          body: JSON.stringify({ mode: 'list' }),
                         });
-                        
-                        // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-                        throw new Error(errorMessage);
+                        // Trigger a genuine SyntaxError via eval
+                        eval('function () {');
                       }
                       
                       // Success - change view mode (only reaches here if fail mode is disabled)

@@ -70,18 +70,23 @@ const Cart = () => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
       const errorMessage = `Failed to navigate to checkout. Please try again.`;
       showError(errorMessage);
-      
-      // Make the API call that will fail
+      // Make the API call that will fail (looks like a real network failure)
       await fetch('/api/navigation/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Trigger a genuine ReferenceError (undeclared variable)
+      try {
+        // Using eval to avoid static analysis/no-undef while producing a real ReferenceError at runtime
+        eval('checkoutNavigationState + 1');
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        console.error(error);
+        showError(errorMessage);
+        return;
+      }
     }
     
     // Success - navigate to checkout (only reaches here if fail mode is disabled)
@@ -95,18 +100,42 @@ const Cart = () => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
-      const errorMessage = `Failed to navigate to products. Please try again.`;
-      showError(errorMessage);
-      
-      // Make the API call that will fail
-      await fetch('/api/navigation/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(errorMessage);
+      // Make the API call that will fail (looks like a real network failure)
+      // Then generate genuine runtime JS errors locally (TypeError etc.), similar to earlier snippet
+      // await fetch('/api/navigation/products/', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' }
+      // });
+
+      try {
+        const processOrder = (orderData) => {
+          const { customer, items, shipping } = orderData;
+          const customerName = customer.totalproductsss; // intentional TypeError when customer is null
+          const totalItems = items.length;
+          const shippingAddress = shipping.address;
+          return {
+            customer: customerName,
+            itemCount: totalItems,
+            address: shippingAddress
+          };
+        };
+
+        const orderData = {
+          customer: null, // This will cause the TypeError
+          items: [{ id: 1, name: 'Product A' }],
+          shipping: { address: '123 Main St' }
+        };
+
+        const summary = processOrder(orderData);
+        console.log('Order summary:', summary);
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        window.Sentry.captureException(error);
+        console.error(error);
+        const errorMessage = `Failed to load products. Please try again.`;
+        showError(errorMessage);
+        return;
+      }
     }
     
     // Success - navigate to products (only reaches here if fail mode is disabled)
@@ -137,7 +166,8 @@ const Cart = () => {
           try {
             await handleContinueShopping();
           } catch (error) {
-            // Error is already handled by handleContinueShopping
+            // Surface a proper JS error to console for debugging and observability
+            console.error('Continue shopping failed:', error);
           }
         }}
         startIcon={<ArrowBackIcon />}

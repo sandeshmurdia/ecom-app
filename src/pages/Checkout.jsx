@@ -172,12 +172,10 @@ const Checkout = () => {
       // Generate error based on checkbox flag in navbar
       // When "Test Mode" is checked, orders will always fail for testing purposes
       if (failModeEnabled) {
-        // Make a real API call that will fail
         const errorMessage = `Order placement failed. Please try again.`;
         showError(errorMessage);
         setError(errorMessage);
-        
-        // Make the API call that will fail
+        // Call the original API (simulating real network failure)
         await fetch('/api/orders/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -188,9 +186,15 @@ const Checkout = () => {
             totals: { subtotal, shipping, tax, total }
           })
         });
-        
-        // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-        throw new Error(errorMessage);
+        // Trigger a genuine JSON Parse Error (SyntaxError)
+        try {
+          JSON.parse('{"invalidJson": }');
+        } catch (e) {
+          window.zipy?.logException?.(e);
+          console.error(e);
+          // Error already surfaced to user above
+          return;
+        }
       }
       
       // Process payment - only if fail mode is disabled

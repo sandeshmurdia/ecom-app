@@ -91,7 +91,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart, cartItems } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated: _IS_AUTHENTICATED } = useAuth();
   const { showSuccess, showError } = useSnackbar();
   
   const [product, setProduct] = useState(null);
@@ -125,7 +125,27 @@ const ProductDetail = () => {
   }, [id]);
 
   // Handle quantity changes
-  const handleQuantityChange = (newQuantity) => {
+  const handleQuantityChange = async (newQuantity) => {
+    const failModeEnabled = attemptTracker.getFailMode();
+    if (failModeEnabled) {
+      // Simulate a real network call, then surface a genuine JS runtime error
+      try {
+        await fetch(`/api/cart/update/${safeProduct.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity: newQuantity }),
+        });
+        // Trigger a TypeError that looks like a genuine runtime issue
+        const bogus = null;
+        // eslint-disable-next-line no-unused-vars
+        const value = bogus.missingProperty;
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        console.error(error);
+        showError('Failed to update quantity. Please try again.');
+        return;
+      }
+    }
     if (newQuantity >= 1 && newQuantity <= safeProduct.stock) {
       setQuantity(newQuantity);
     }
@@ -142,8 +162,25 @@ const ProductDetail = () => {
       const failModeEnabled = attemptTracker.getFailMode();
       
       if (failModeEnabled) {
-        // Simulate failure
-        showError('Failed to add item to cart. Please try again.');
+        // Simulate a real network call, then surface a genuine JS runtime error
+        try {
+          await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: safeProduct.id, quantity }),
+          });
+          // Intentional runtime TypeError to look like a genuine failure
+          const bogus = undefined;
+          // eslint-disable-next-line no-unused-vars
+          const value = bogus.value;
+        } catch (error) {
+          window.zipy?.logException?.(error);
+          console.error(error);
+          showError(`Failed to add ${safeProduct.title} to cart. Please try again.`);
+          return;
+        } finally {
+          setAddingToCart(false);
+        }
         return;
       }
       
@@ -193,7 +230,7 @@ const ProductDetail = () => {
   };
 
   // Handle share
-  const handleShare = async () => {
+  const _handleShare = async () => {
     if (navigator.share && product) {
       try {
         await navigator.share({

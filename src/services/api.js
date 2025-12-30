@@ -72,7 +72,7 @@ export const productAPI = {
         },
         stock: Math.floor(Math.random() * 50) + 10, // Generate random stock for demo
       }));
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch products. Please try again later.');
     }
   },
@@ -82,7 +82,7 @@ export const productAPI = {
     try {
       const categories = await createFetchRequest('/products/categories');
       return categories;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch categories. Please try again later.');
     }
   },
@@ -106,7 +106,7 @@ export const productAPI = {
         },
         stock: Math.floor(Math.random() * 50) + 10, // Generate random stock for demo
       };
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch product details. Please try again later.');
     }
   },
@@ -173,15 +173,14 @@ export const paymentAPI = {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      // Make a real API call that will fail
+      // Call the original API to simulate a real network error
       await fetch('/api/payment/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify(paymentData),
       });
-      
-      // If we reach here, the API call succeeded (which shouldn't happen), but we still want to fail
-      throw new Error(`Payment processing failed. Please try again.`);
+      // Preserve failure path
+      throw new Error('Payment processing failed. Please try again.');
     }
     
     // Generate order ID
