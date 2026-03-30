@@ -11,13 +11,8 @@ export default defineConfig({
       project: "node",
       authToken: process.env.SENTRY_AUTH_TOKEN,
       sourcemaps: {
-        // As you're enabling client source maps, you probably want to delete them after they're uploaded to Sentry.
-        // Set the appropriate glob pattern for your output folder - some glob examples below:
-        filesToDeleteAfterUpload: [
-          "./**/*.map",
-          ".*/**/public/**/*.map",
-          "./dist/**/client/**/*.map",
-        ],
+        // Keep maps until post-build New Relic upload runs, then delete there.
+        filesToDeleteAfterUpload: [],
       },
     }),
   ],
