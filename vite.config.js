@@ -2,7 +2,14 @@ import { defineConfig } from "vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 export default defineConfig({
   build: {
-    sourcemap: "hidden", // Source map generation must be turned on ("hidden", true, etc.)
+    // Use visible sourcemaps so localhost stack traces resolve to original file names.
+    sourcemap: true,
+    // Keep original source content embedded in sourcemaps for New Relic de-minified stack traces.
+    rollupOptions: {
+      output: {
+        sourcemapExcludeSources: false,
+      },
+    },
   },
   plugins: [
     // Put the Sentry Vite plugin after all other plugins
