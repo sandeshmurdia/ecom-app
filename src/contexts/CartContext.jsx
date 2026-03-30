@@ -41,21 +41,51 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   // Add item to cart with quantity management - implements fail/success pattern
-  const addToCart = async (product, quantity = 1) => {
+  const addToCart = async (product, quantity) => {
+    // Reason: protect callers from unhandled promise rejections and handle invalid inputs gracefully.
+    if (!product || product.id === undefined || product.id === null) {
+      const errorMessage = 'Failed to add item to cart: invalid product.';
+      console.error('addToCart called with invalid product:', product);
+      showError(errorMessage);
+      return false;
+    }
+
+    // Reason: callers sometimes pass `product.quantity` instead of a second arg (e.g. ProductDetail).
+    const resolvedQuantityRaw =
+      Number.isFinite(quantity) ? quantity : Number.isFinite(product.quantity) ? product.quantity : 1;
+    const resolvedQuantity = Math.floor(resolvedQuantityRaw);
+
+    if (!Number.isFinite(resolvedQuantity) || resolvedQuantity <= 0) {
+      const errorMessage = 'Failed to add item to cart: invalid quantity.';
+      console.error('addToCart called with invalid quantity:', { productId: product.id, quantity });
+      showError(errorMessage);
+      return false;
+    }
+
     // Check if fail mode is enabled from navbar checkbox
     const failModeEnabled = attemptTracker.getFailMode();
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
       const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity }),
-      });
-      // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
-      eval('requestedAdditionalItem + 1');
+      // Reason: fail-mode should surface a real runtime error, but it should not become an unhandled rejection.
+      try {
+        showError(errorMessage);
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product.id, quantity: resolvedQuantity }),
+        });
+        // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
+        eval('requestedAdditionalItem + 1');
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        console.error('addToCart fail-mode error:', error);
+        // Error already shown via snackbar above; return false so callers don't see a rejected Promise.
+        return false;
+      }
+      // Reason: fail-mode is expected to fail deterministically and must not fall through to the success path.
+      return false;
     }
     
     // Success - add item to cart (only reaches here if fail mode is disabled)
@@ -66,12 +96,12 @@ export const CartProvider = ({ children }) => {
         // Update quantity if item already exists
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: item.quantity + resolvedQuantity }
             : item
         );
       } else {
         // Add new item to cart
-        return [...prevItems, { ...product, quantity }];
+        return [...prevItems, { ...product, quantity: resolvedQuantity }];
       }
     });
     
