@@ -118,17 +118,33 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
+    // Defensive guard: avoid rejected promises caused by unexpected/missing product data.
+    if (!product || typeof product !== 'object' || product.id == null) {
+      const errorMessage = 'Failed to add item to cart. Please try again.';
+      console.error('handleAddToCart called with invalid product:', product);
+      showError(errorMessage);
+      return;
+    }
+
     const failModeEnabled = attemptTracker.getFailMode();
     if (failModeEnabled) {
       const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
       showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAdded + 1');
+      try {
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product.id, quantity: 1 }),
+        });
+        // Intentional failure path for the demo "fail mode".
+        // We catch it here so UI callers never see an unhandled promise rejection.
+        // Trigger a genuine ReferenceError via eval
+        eval('itemToBeAdded + 1');
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        console.error(error);
+      }
+      return;
     }
     // Normal flow - delegate to CartContext
     await addToCart(product);
@@ -383,7 +399,13 @@ const Products = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleAddToCart(product);
+              // React doesn't await async event handlers automatically; ensure we handle any rejection.
+              // This prevents "Unhandled Promise Rejection" in production observability.
+              handleAddToCart(product).catch((error) => {
+                window.zipy?.logException?.(error);
+                console.error('Add to cart failed:', error);
+                showError('Failed to add item to cart. Please try again.');
+              });
             }}
             onMouseDown={(e) => {
               e.preventDefault();

@@ -25,10 +25,10 @@ import {
 } from '@mui/icons-material';
 
 const About = () => {
-
-
   // Handle team member click - removed intentional error throwing
-  const handleTeamMemberClick = (member) => {
+  // `member` is intentionally unused for now; handler is a placeholder for future enhancements.
+  const handleTeamMemberClick = (_member) => {
+    void _member;
     // Team member click functionality can be implemented here
   };
 

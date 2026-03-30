@@ -33,9 +33,11 @@ const ShippingForm = ({
   onShippingChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false 
+  showValidation: _SHOW_VALIDATION = false 
 }) => {
   const [showHelp, setShowHelp] = useState({});
+  // Preserve public prop API while keeping the current UI clean.
+  void _SHOW_VALIDATION;
 
   // Enhanced change handler with validation feedback
   const handleFieldChange = useCallback((field) => (event) => {

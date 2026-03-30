@@ -184,16 +184,25 @@ const ProductDetail = () => {
         return;
       }
       
-      // Add to cart successfully
-      addToCart({
-        id: safeProduct.id,
-        title: safeProduct.title,
-        price: safeProduct.price,
-        image: safeProduct.image,
-        quantity: quantity,
-      });
-      
-      showSuccess(`${safeProduct.title} added to cart (${quantity} ${quantity === 1 ? 'item' : 'items'})`);
+      // Add to cart successfully.
+      // CartContext owns cart state updates; we suppress its default toast here to avoid double-toasting
+      // because this page has a quantity-aware success message.
+      // Await to ensure errors are caught here and never surface as an unhandled promise rejection.
+      const didAdd = await addToCart(
+        {
+          id: safeProduct.id,
+          title: safeProduct.title,
+          price: safeProduct.price,
+          image: safeProduct.image,
+        },
+        quantity,
+        { showToast: false }
+      );
+
+      // Keep the existing user feedback behavior, but avoid double-toasting if CartContext already handled it.
+      if (didAdd) {
+        showSuccess(`${safeProduct.title} added to cart (${quantity} ${quantity === 1 ? 'item' : 'items'})`);
+      }
       
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -209,13 +218,18 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
-        id: safeProduct.id,
-        title: safeProduct.title,
-        price: safeProduct.price,
-        image: safeProduct.image,
-        quantity: quantity,
-      });
+      // Await to ensure the cart update completes (and to keep errors in this try/catch).
+      // Suppress default toast because this flow is immediately followed by navigation.
+      await addToCart(
+        {
+          id: safeProduct.id,
+          title: safeProduct.title,
+          price: safeProduct.price,
+          image: safeProduct.image,
+        },
+        quantity,
+        { showToast: false }
+      );
       // Navigate to checkout
       navigate('/checkout');
     } catch (error) {

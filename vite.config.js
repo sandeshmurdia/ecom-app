@@ -1,5 +1,7 @@
 import { defineConfig } from "vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+// Vite configs run in Node; declare `process` for ESLint (browser globals default).
+/* eslint-disable no-undef */
 export default defineConfig({
   build: {
     // Use visible sourcemaps so localhost stack traces resolve to original file names.

@@ -32,12 +32,14 @@ const PaymentForm = ({
   onPaymentChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false,
+  showValidation: _showValidation = false,
   isProcessing = false 
 }) => {
   const [showCardNumber, setShowCardNumber] = useState(false);
   const [showCvv, setShowCvv] = useState(false);
   const [showHelp, setShowHelp] = useState({});
+  // Keep prop for backwards compatibility even if unused in UI right now.
+  void _showValidation;
 
   // Enhanced change handler with formatting
   const handleFieldChange = useCallback((field) => (event) => {
