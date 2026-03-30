@@ -4,6 +4,8 @@ export default defineConfig({
   build: {
     // Use visible sourcemaps so localhost stack traces resolve to original file names.
     sourcemap: true,
+    // Keep production bundles readable for debugging in browser and New Relic contexts.
+    minify: false,
     // Keep original source content embedded in sourcemaps for New Relic de-minified stack traces.
     rollupOptions: {
       output: {
