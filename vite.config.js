@@ -18,7 +18,9 @@ export default defineConfig({
     sentryVitePlugin({
       org: "zipy-0f",
       project: "node",
-      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Use a safe lookup to avoid ESLint `no-undef` in ESM config environments.
+      // Sentry plugin will no-op if no token is provided (typical for local/dev).
+      authToken: globalThis?.process?.env?.SENTRY_AUTH_TOKEN,
       sourcemaps: {
         // Keep maps until post-build New Relic upload runs, then delete there.
         filesToDeleteAfterUpload: [],

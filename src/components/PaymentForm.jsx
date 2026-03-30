@@ -32,7 +32,9 @@ const PaymentForm = ({
   onPaymentChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false,
+  // `showValidation` is accepted for API compatibility with callers. We intentionally
+  // do not destructure/use it here to avoid unused-var lint errors while keeping the
+  // component's public API stable.
   isProcessing = false 
 }) => {
   const [showCardNumber, setShowCardNumber] = useState(false);

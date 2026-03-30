@@ -27,8 +27,9 @@ import {
 const About = () => {
 
 
-  // Handle team member click - removed intentional error throwing
-  const handleTeamMemberClick = (member) => {
+  // Handle team member click - placeholder for future enhancement
+  // eslint-disable-next-line no-unused-vars
+  const handleTeamMemberClick = (_member) => {
     // Team member click functionality can be implemented here
   };
 

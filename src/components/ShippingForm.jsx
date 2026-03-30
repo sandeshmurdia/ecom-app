@@ -33,7 +33,7 @@ const ShippingForm = ({
   onShippingChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false 
+  // NOTE: `showValidation` removed because it was unused and caused lint failures.
 }) => {
   const [showHelp, setShowHelp] = useState({});
 
