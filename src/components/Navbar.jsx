@@ -39,6 +39,7 @@ const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Fail mode is a developer-only testing tool and is force-disabled in production.
   const [failModeEnabled, setFailModeEnabled] = useState(attemptTracker.getFailMode());
 
   // Handle scroll effect for navbar

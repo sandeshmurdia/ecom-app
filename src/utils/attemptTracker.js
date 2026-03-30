@@ -3,6 +3,11 @@
 
 class AttemptTracker {
   constructor() {
+    // In production, "fail mode" must never be enabled because it intentionally injects
+    // errors for testing/demo purposes. Persisting this flag in localStorage can cause
+    // real users to hit forced failures across sessions.
+    this.isProduction = Boolean(import.meta.env?.PROD);
+
     // Store attempt counts in localStorage for persistence across sessions
     this.storageKey = 'ecommerce_attempt_counts';
     this.counts = this.loadCounts();
@@ -16,7 +21,7 @@ class AttemptTracker {
     try {
       const saved = localStorage.getItem(this.storageKey);
       return saved ? JSON.parse(saved) : {};
-    } catch (error) {
+    } catch {
       // Error loading attempt counts.
       return {};
     }
@@ -26,7 +31,7 @@ class AttemptTracker {
   saveCounts() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.counts));
-    } catch (error) {
+    } catch {
       // Error saving attempt counts.
     }
   }
@@ -45,10 +50,20 @@ class AttemptTracker {
 
   // Load fail mode setting from localStorage
   loadFailMode() {
+    if (this.isProduction) {
+      // Defensive: if a user previously enabled fail mode, ensure it can't affect prod.
+      try {
+        localStorage.removeItem('ecommerce_fail_mode');
+      } catch {
+        // Ignore storage failures.
+      }
+      return false;
+    }
+
     try {
       const saved = localStorage.getItem('ecommerce_fail_mode');
       return saved ? JSON.parse(saved) : false; // Default to false (success mode)
-    } catch (error) {
+    } catch {
       // Error loading fail mode setting.
       return false;
     }
@@ -56,15 +71,23 @@ class AttemptTracker {
 
   // Save fail mode setting to localStorage
   saveFailMode() {
+    if (this.isProduction) {
+      return;
+    }
+
     try {
       localStorage.setItem('ecommerce_fail_mode', JSON.stringify(this.failModeEnabled));
-    } catch (error) {
+    } catch {
       // Error saving fail mode setting.
     }
   }
 
   // Toggle fail mode
   toggleFailMode() {
+    if (this.isProduction) {
+      return false;
+    }
+
     this.failModeEnabled = !this.failModeEnabled;
     this.saveFailMode();
     return this.failModeEnabled;
@@ -72,6 +95,10 @@ class AttemptTracker {
 
   // Explicitly set fail mode
   setFailMode(enabled) {
+    if (this.isProduction) {
+      return false;
+    }
+
     this.failModeEnabled = Boolean(enabled);
     this.saveFailMode();
     return this.failModeEnabled;
@@ -83,7 +110,7 @@ class AttemptTracker {
   }
 
   // Check if current attempt should fail (odd attempts fail, even attempts succeed)
-  shouldFail(action) {
+  shouldFail() {
     // New behavior:
     // - If fail mode is enabled → ALWAYS fail
     // - If fail mode is disabled → ALWAYS succeed
@@ -96,6 +123,8 @@ class AttemptTracker {
   // Get attempt info for an action
   getAttemptInfo(action) {
     const count = this.getAttemptCount(action);
+    // We currently ignore the per-action toggle in `shouldFail`, but keep the `action`
+    // parameter here for forward compatibility with the original design.
     const shouldFail = this.shouldFail(action);
     return {
       count,

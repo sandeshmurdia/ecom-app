@@ -47,15 +47,24 @@ export const CartProvider = ({ children }) => {
     
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
+      // Note: "fail mode" is a developer testing tool. We intentionally surface a genuine runtime error
+      // while ensuring it is *caught* so it never becomes an unhandled promise rejection in production.
+      const title = product?.title || 'item';
+      const errorMessage = `Failed to add ${title} to cart. Please try again.`;
       showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity }),
-      });
-      // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
-      eval('requestedAdditionalItem + 1');
+      try {
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product?.id, quantity }),
+        });
+        // Avoid `eval` (unsafe) while still generating a real ReferenceError for observability tooling.
+        throw new ReferenceError('requestedAdditionalItem is not defined');
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        console.error(error);
+        return false;
+      }
     }
     
     // Success - add item to cart (only reaches here if fail mode is disabled)

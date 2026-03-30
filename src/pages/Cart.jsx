@@ -68,8 +68,7 @@ const Cart = () => {
     // Check if fail mode is enabled from navbar checkbox
     const failModeEnabled = attemptTracker.getFailMode();
     
-
-    console.log('failModeEnabledddd', failModeEnabled);
+    // Avoid noisy production logs; fail mode is intended for developers.
     // Generate error based on checkbox flag in navbar
     if (failModeEnabled) {
       const errorMessage = `Failed to navigate to checkout. Please try again.`;
@@ -81,8 +80,8 @@ const Cart = () => {
       });
       // Trigger a genuine ReferenceError (undeclared variable)
       try {
-        // Using eval to avoid static analysis/no-undef while producing a real ReferenceError at runtime
-        eval('checkoutNavigationState + 1');
+        // Avoid `eval` (unsafe) while producing a real ReferenceError at runtime.
+        throw new ReferenceError('checkoutNavigationState is not defined');
       } catch (error) {
         window.zipy?.logException?.(error);
         console.error(error);

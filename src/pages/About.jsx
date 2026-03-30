@@ -28,7 +28,7 @@ const About = () => {
 
 
   // Handle team member click - removed intentional error throwing
-  const handleTeamMemberClick = (member) => {
+  const handleTeamMemberClick = () => {
     // Team member click functionality can be implemented here
   };
 

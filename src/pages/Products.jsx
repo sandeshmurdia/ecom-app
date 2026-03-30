@@ -118,20 +118,29 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAdded + 1');
+    // This is triggered from a click handler; always catch errors to avoid unhandled promise rejections.
+    try {
+      const failModeEnabled = attemptTracker.getFailMode();
+      if (failModeEnabled) {
+        // Fail-mode behavior: show the user-facing error and simulate a network call. The runtime error
+        // is generated and caught by CartContext (and in production fail mode is disabled entirely).
+        const title = product?.title || 'item';
+        const errorMessage = `Failed to add ${title} to cart. Please try again.`;
+        showError(errorMessage);
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product?.id, quantity: 1 }),
+        });
+      }
+
+      // Normal flow - delegate to CartContext (handles fail-mode internally as well).
+      await addToCart(product);
+    } catch (error) {
+      window.zipy?.logException?.(error);
+      console.error('Add to cart failed:', error);
+      showError('Failed to add item to cart. Please try again.');
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
@@ -628,8 +637,8 @@ const Products = () => {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ mode: 'list' }),
                         });
-                        // Trigger a genuine SyntaxError via eval
-                        eval('function () {');
+                        // Trigger a genuine SyntaxError without using eval (safer).
+                        JSON.parse('{');
                       }
                       
                       // Success - change view mode (only reaches here if fail mode is disabled)

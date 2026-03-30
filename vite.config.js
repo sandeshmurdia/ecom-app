@@ -1,5 +1,8 @@
 import { defineConfig } from "vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+// Vite config runs in Node; `process` is available at runtime, but ESLint's browser globals
+// don't include it by default for this file.
+/* global process */
 export default defineConfig({
   build: {
     // Use visible sourcemaps so localhost stack traces resolve to original file names.

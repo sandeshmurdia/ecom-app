@@ -33,6 +33,8 @@ const ShippingForm = ({
   onShippingChange, 
   errors = {}, 
   isComplete = false,
+  // `showValidation` is reserved for future inline validation UI; kept for API compatibility.
+  // eslint-disable-next-line no-unused-vars
   showValidation = false 
 }) => {
   const [showHelp, setShowHelp] = useState({});
