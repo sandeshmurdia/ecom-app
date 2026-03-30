@@ -32,7 +32,9 @@ const PaymentForm = ({
   onPaymentChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false,
+  // Note: `Checkout.jsx` may pass `showValidation`, but this component currently
+  // renders validation strictly based on `errors`, so we intentionally do not
+  // destructure it (avoids unused-var lint noise while preserving API compatibility).
   isProcessing = false 
 }) => {
   const [showCardNumber, setShowCardNumber] = useState(false);

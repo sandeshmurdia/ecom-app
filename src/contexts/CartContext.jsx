@@ -42,42 +42,79 @@ export const CartProvider = ({ children }) => {
 
   // Add item to cart with quantity management - implements fail/success pattern
   const addToCart = async (product, quantity = 1) => {
-    // Check if fail mode is enabled from navbar checkbox
-    const failModeEnabled = attemptTracker.getFailMode();
-    
-    // Generate error based on checkbox flag in navbar
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity }),
-      });
-      // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
-      eval('requestedAdditionalItem + 1');
-    }
-    
-    // Success - add item to cart (only reaches here if fail mode is disabled)
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      
-      if (existingItem) {
-        // Update quantity if item already exists
-        return prevItems.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      } else {
-        // Add new item to cart
-        return [...prevItems, { ...product, quantity }];
+    try {
+      if (!product || typeof product !== 'object') {
+        // Guard against unexpected callers passing invalid product data.
+        showError('Failed to add item to cart. Please try again.');
+        return false;
       }
-    });
-    
-    // Show success message only if we reach here (fail mode is disabled)
-    showSuccess(`${product.title} added to cart successfully!`);
-    return true; // Indicate success
+
+      if (product.id === undefined || product.id === null) {
+        // `id` is required for cart dedupe and persistence.
+        showError('Failed to add item to cart. Please try again.');
+        return false;
+      }
+
+      const normalizedQuantity = Number(quantity);
+      if (!Number.isFinite(normalizedQuantity) || normalizedQuantity <= 0) {
+        // Prevent corrupt cart state from bad quantity values.
+        showError('Failed to add item to cart. Please try again.');
+        return false;
+      }
+
+      // Check if fail mode is enabled from navbar checkbox
+      const failModeEnabled = attemptTracker.getFailMode();
+
+      // Generate error based on checkbox flag in navbar
+      if (failModeEnabled) {
+        const title = product.title || 'this item';
+        const errorMessage = `Failed to add ${title} to cart. Please try again.`;
+        showError(errorMessage);
+
+        try {
+          await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: product.id, quantity: normalizedQuantity }),
+          });
+
+          // Intentionally surface a real runtime error for "fail mode" testing, but without `eval`.
+          // Keeping this error contained prevents unhandled promise rejections when callers don't `await`.
+          throw new ReferenceError('requestedAdditionalItem is not defined');
+        } catch (error) {
+          window.zipy?.logException?.(error);
+          console.error(error);
+          // Error already surfaced to user above.
+          return false;
+        }
+      }
+
+      // Success - add item to cart (only reaches here if fail mode is disabled)
+      setCartItems(prevItems => {
+        const existingItem = prevItems.find(item => item.id === product.id);
+
+        if (existingItem) {
+          // Update quantity if item already exists
+          return prevItems.map(item =>
+            item.id === product.id
+              ? { ...item, quantity: item.quantity + normalizedQuantity }
+              : item
+          );
+        } else {
+          // Add new item to cart
+          return [...prevItems, { ...product, quantity: normalizedQuantity }];
+        }
+      });
+
+      // Show success message only if we reach here (fail mode is disabled)
+      showSuccess(`${product.title || 'Item'} added to cart successfully!`);
+      return true; // Indicate success
+    } catch (error) {
+      window.zipy?.logException?.(error);
+      console.error('Add to cart failed:', error);
+      showError('Failed to add item to cart. Please try again.');
+      return false;
+    }
   };
 
   // Remove item from cart completely - implements fail/success pattern

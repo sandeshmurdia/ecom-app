@@ -32,8 +32,7 @@ const ShippingForm = ({
   shippingData, 
   onShippingChange, 
   errors = {}, 
-  isComplete = false,
-  showValidation = false 
+  isComplete = false
 }) => {
   const [showHelp, setShowHelp] = useState({});
 

@@ -118,20 +118,44 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAddedInCart + 1');
+    try {
+      if (!product || typeof product !== 'object') {
+        // Guard against unexpected UI calls with an invalid product object.
+        showError('Unable to add item to cart. Please refresh and try again.');
+        return;
+      }
+
+      const failModeEnabled = attemptTracker.getFailMode();
+      if (failModeEnabled) {
+        const title = product.title || 'this item';
+        const errorMessage = `Failed to add ${title} to cart. Please try again.`;
+        showError(errorMessage);
+
+        try {
+          await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: product.id, quantity: 1 }),
+          });
+
+          // Intentionally surface a real runtime error for "fail mode" testing, but without `eval`
+          // (avoids security concerns and prevents unhandled promise rejections from bubbling out).
+          throw new ReferenceError('itemToBeAddedInCart is not defined');
+        } catch (error) {
+          window.zipy?.logException?.(error);
+          console.error(error);
+          // Error is already surfaced to the user above.
+          return;
+        }
+      }
+
+      // Normal flow - delegate to CartContext
+      await addToCart(product);
+    } catch (error) {
+      window.zipy?.logException?.(error);
+      console.error('Add to cart failed:', error);
+      showError('Failed to add item to cart. Please try again.');
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
