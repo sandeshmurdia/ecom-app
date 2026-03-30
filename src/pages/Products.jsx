@@ -118,20 +118,28 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
+    // Reason: prevent async click handlers from causing unhandled promise rejections.
+    if (!product || product.id === undefined || product.id === null) {
+      const errorMessage = 'Failed to add item to cart: invalid product.';
+      console.error('handleAddToCart called with invalid product:', product);
       showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAdded + 1');
+      return false;
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
+
+    try {
+      // Delegate to CartContext (includes fail/success behavior).
+      await addToCart(product);
+      return true;
+    } catch (error) {
+      // Reason: CartContext fail-mode is expected to simulate a runtime error; we still must not leak an unhandled rejection.
+      window.zipy?.logException?.(error);
+      console.error('Add to cart failed:', error);
+
+      if (!attemptTracker.getFailMode()) {
+        showError(`Failed to add ${product.title ?? 'item'} to cart. Please try again.`);
+      }
+      return false;
+    }
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
@@ -383,7 +391,8 @@ const Products = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleAddToCart(product);
+              // Reason: fire-and-forget, but keep failures handled within `handleAddToCart`.
+              void handleAddToCart(product);
             }}
             onMouseDown={(e) => {
               e.preventDefault();

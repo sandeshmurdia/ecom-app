@@ -185,13 +185,19 @@ const ProductDetail = () => {
       }
       
       // Add to cart successfully
-      addToCart({
+      // Reason: `addToCart` is async and may fail; await to avoid unhandled rejections and to keep UI state consistent.
+      const added = await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
         image: safeProduct.image,
-        quantity: quantity,
-      });
+        category: safeProduct.category,
+      }, quantity);
+
+      if (!added) {
+        showError(`Failed to add ${safeProduct.title} to cart. Please try again.`);
+        return;
+      }
       
       showSuccess(`${safeProduct.title} added to cart (${quantity} ${quantity === 1 ? 'item' : 'items'})`);
       
@@ -209,13 +215,19 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
+      // Reason: ensure add-to-cart completes (or fails) before navigating.
+      const added = await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
         image: safeProduct.image,
-        quantity: quantity,
-      });
+        category: safeProduct.category,
+      }, quantity);
+
+      if (!added) {
+        showError(`Failed to add ${safeProduct.title} to cart. Please try again.`);
+        return;
+      }
       // Navigate to checkout
       navigate('/checkout');
     } catch (error) {
