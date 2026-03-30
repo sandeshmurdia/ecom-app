@@ -118,20 +118,46 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAdded + 1');
+    // NOTE: This function must never allow a rejected Promise to escape to an event handler,
+    // otherwise React will not catch it and the browser reports an "Unhandled Promise Rejection".
+    try {
+      if (!product?.id) {
+        showError('Failed to add item to cart. Please refresh and try again.');
+        return false;
+      }
+
+      const failModeEnabled = attemptTracker.getFailMode();
+      if (failModeEnabled) {
+        const errorMessage = `Failed to add ${product.title || 'product'} to cart. Please try again.`;
+        showError(errorMessage);
+
+        try {
+          await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: product.id, quantity: 1 }),
+          });
+
+          // Intentionally trigger a runtime error for fail-mode observability,
+          // but keep it handled so it doesn't become an unhandled promise rejection in production.
+          eval('itemToBeAdded + 1');
+        } catch (error) {
+          window.zipy?.logException?.(error);
+          console.error('Fail-mode add to cart error:', error);
+        }
+
+        return false;
+      }
+
+      // Normal flow - delegate to CartContext
+      await addToCart(product);
+      return true;
+    } catch (error) {
+      window.zipy?.logException?.(error);
+      console.error('Add to cart failed:', error);
+      showError('Failed to add item to cart. Please try again.');
+      return false;
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
@@ -383,7 +409,15 @@ const Products = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleAddToCart(product);
+              // Prevent "Unhandled Promise Rejection" by awaiting/catching the async handler.
+              (async () => {
+                try {
+                  await handleAddToCart(product);
+                } catch (error) {
+                  window.zipy?.logException?.(error);
+                  console.error('Add to cart click handler failed:', error);
+                }
+              })();
             }}
             onMouseDown={(e) => {
               e.preventDefault();

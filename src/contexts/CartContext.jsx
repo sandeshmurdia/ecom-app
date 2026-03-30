@@ -49,13 +49,22 @@ export const CartProvider = ({ children }) => {
     if (failModeEnabled) {
       const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
       showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity }),
-      });
-      // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
-      eval('requestedAdditionalItem + 1');
+      try {
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product.id, quantity }),
+        });
+
+        // Intentionally trigger a runtime error for fail-mode observability,
+        // but keep it handled so it doesn't become an "Unhandled Promise Rejection"
+        // when callers forget to await/catch this async method.
+        eval('requestedAdditionalItem + 1');
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        console.error('Fail-mode CartContext.addToCart error:', error);
+      }
+      return false; // Indicate failure without rejecting.
     }
     
     // Success - add item to cart (only reaches here if fail mode is disabled)

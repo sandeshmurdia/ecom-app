@@ -185,7 +185,9 @@ const ProductDetail = () => {
       }
       
       // Add to cart successfully
-      addToCart({
+      // Await the async CartContext method so any failure paths are catchable here.
+      // Without awaiting, a rejection can surface as an "Unhandled Promise Rejection" in the browser.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
@@ -209,7 +211,8 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
+      // Await so navigation doesn't proceed if add-to-cart fails.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
