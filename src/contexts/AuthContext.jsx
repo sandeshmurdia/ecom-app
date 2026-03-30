@@ -6,6 +6,7 @@ import { useSnackbar } from './SnackbarContext';
 const AuthContext = createContext();
 
 // Custom hook to use authentication context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -96,9 +97,8 @@ export const AuthProvider = ({ children }) => {
       showSuccess(`Login successful! Welcome back.`);
       
       return { success: true, user: userData };
-    } catch (error) {
-      // console.error('Login error:', error);
-      // throw error;
+    } catch {
+      // Intentionally swallow login errors for demo behavior (fail-mode already surfaces snackbar errors).
     } finally {
       setLoading(false);
     }

@@ -32,7 +32,6 @@ const PaymentForm = ({
   onPaymentChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false,
   isProcessing = false 
 }) => {
   const [showCardNumber, setShowCardNumber] = useState(false);

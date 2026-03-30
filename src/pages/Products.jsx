@@ -118,20 +118,31 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAdded + 1');
+    try {
+      const safeTitle = product?.title || 'this item';
+      const safeProductId = product?.id;
+      const failModeEnabled = attemptTracker.getFailMode();
+      if (failModeEnabled) {
+        const errorMessage = `Failed to add ${safeTitle} to cart. Please try again.`;
+        showError(errorMessage);
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: safeProductId, quantity: 1 }),
+        });
+        // Trigger a genuine ReferenceError via eval
+        eval('itemToBeAdded + 1');
+      }
+
+      // Normal flow - delegate to CartContext
+      await addToCart(product);
+    } catch (error) {
+      // Prevent unhandled promise rejections from bubbling out of the click handler.
+      // This is especially important in "fail mode" where we intentionally throw runtime errors.
+      window.zipy?.logException?.(error);
+      console.error('Add to cart failed:', error);
+      showError('Failed to add item to cart. Please try again.');
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
   };
 
   // Handle search input change - implements fail/success pattern with debouncing

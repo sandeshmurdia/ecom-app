@@ -185,7 +185,9 @@ const ProductDetail = () => {
       }
       
       // Add to cart successfully
-      addToCart({
+      // Await to ensure any async errors are caught here (prevents unhandled promise rejections).
+      // This keeps the behavior consistent if CartContext implements async side-effects in the future.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
@@ -209,7 +211,8 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
+      // Await for the same reason as above: keep errors inside this handler boundary.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
