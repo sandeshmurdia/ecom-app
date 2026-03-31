@@ -137,7 +137,8 @@ const PaymentForm = ({
       </Box>
 
       {/* Error Alert */}
-      {Object.keys(errors).length > 0 && (
+      {/* Only show validation errors after the user tries to proceed (improves UX and uses showValidation as intended). */}
+      {showValidation && Object.keys(errors).length > 0 && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
           Please correct the following errors to continue
         </Alert>
@@ -171,8 +172,8 @@ const PaymentForm = ({
             autoComplete="cc-number"
             value={paymentData.cardNumber || ''}
             onChange={handleFieldChange('cardNumber')}
-            error={!!errors.cardNumber}
-            helperText={errors.cardNumber}
+            error={showValidation && !!errors.cardNumber}
+            helperText={showValidation ? errors.cardNumber : ''}
             placeholder="1234 5678 9012 3456"
             InputProps={{
               startAdornment: (
@@ -225,8 +226,8 @@ const PaymentForm = ({
             autoComplete="cc-name"
             value={paymentData.cardHolder || ''}
             onChange={handleFieldChange('cardHolder')}
-            error={!!errors.cardHolder}
-            helperText={errors.cardHolder}
+            error={showValidation && !!errors.cardHolder}
+            helperText={showValidation ? errors.cardHolder : ''}
             placeholder="JOHN DOE"
             InputProps={{
               startAdornment: (
@@ -274,8 +275,8 @@ const PaymentForm = ({
             autoComplete="cc-exp"
             value={paymentData.expiryDate || ''}
             onChange={handleFieldChange('expiryDate')}
-            error={!!errors.expiryDate}
-            helperText={errors.expiryDate}
+            error={showValidation && !!errors.expiryDate}
+            helperText={showValidation ? errors.expiryDate : ''}
             placeholder="MM/YY"
             InputProps={{
               startAdornment: (
@@ -310,8 +311,8 @@ const PaymentForm = ({
             autoComplete="cc-csc"
             value={paymentData.cvv || ''}
             onChange={handleFieldChange('cvv')}
-            error={!!errors.cvv}
-            helperText={errors.cvv}
+            error={showValidation && !!errors.cvv}
+            helperText={showValidation ? errors.cvv : ''}
             placeholder="123"
             InputProps={{
               startAdornment: (

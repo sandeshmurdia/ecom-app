@@ -118,20 +118,43 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAddedtNR + 1');
+    // This handler is called from a click event; it must never leak a rejected promise.
+    if (!product || product.id == null) {
+      showError('Failed to add item to cart. Please try again.');
+      return;
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
+
+    try {
+      const failModeEnabled = attemptTracker.getFailMode();
+      if (failModeEnabled) {
+        const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
+        showError(errorMessage);
+
+        // Simulate a network call, then trigger a runtime error for monitoring — but keep it handled.
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product.id, quantity: 1 }),
+        });
+
+        try {
+          // Trigger a genuine ReferenceError via eval without tripping static analysis.
+          eval('itemToBeAddedInCart + 1');
+        } catch (error) {
+          window.zipy?.logException?.(error);
+          console.error('Products.handleAddToCart fail-mode error:', error);
+        }
+
+        return;
+      }
+
+      // Normal flow - delegate to CartContext
+      await addToCart(product);
+    } catch (error) {
+      window.zipy?.logException?.(error);
+      console.error('Products.handleAddToCart error:', error);
+      showError('Failed to add item to cart. Please try again.');
+    }
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
@@ -684,7 +707,7 @@ const Products = () => {
             <Button
               variant="outlined"
               onClick={() => {
-                throw new Error('Clear filters erroreeeee');
+                // Clearing filters should not throw; previously this line prevented filters from ever resetting.
                 setSearchTerm('');
                 setSelectedCategory('all');
                 setSortBy('default');

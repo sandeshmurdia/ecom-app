@@ -33,7 +33,8 @@ const ShippingForm = ({
   onShippingChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false 
+  // Intentionally unused: the parent owns validation behavior, but we keep this prop for API compatibility.
+  showValidation: _SHOW_VALIDATION = false
 }) => {
   const [showHelp, setShowHelp] = useState({});
 

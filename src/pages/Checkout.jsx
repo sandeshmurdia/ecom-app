@@ -204,8 +204,9 @@ const Checkout = () => {
         amount: total,
       });
       
-      // Clear cart and navigate to confirmation
-      clearCart();
+      // Clear cart and navigate to confirmation.
+      // Awaiting prevents failures (e.g. fail mode) from becoming unhandled promise rejections.
+      await clearCart();
       
       // Show success message only if we reach here (no error was thrown)
       showSuccess(`Order placed successfully! Order ID: ${paymentResult.orderId}`);

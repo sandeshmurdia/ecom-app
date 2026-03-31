@@ -23,7 +23,16 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Treat leading underscores / CONSTANT_CASE as intentional unused markers
+      // across both variables and function parameters to keep lint strict while
+      // allowing explicit "unused" annotations.
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^[A-Z_]',
+          argsIgnorePattern: '^[A-Z_]',
+        },
+      ],
     },
   },
 ])

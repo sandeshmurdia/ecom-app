@@ -19,6 +19,8 @@ export default defineConfig({
     sentryVitePlugin({
       org: "zipy-0f",
       project: "node",
+      // Vite config runs in Node. `process` is available at runtime but may be flagged by ESLint's browser globals.
+      // eslint-disable-next-line no-undef
       authToken: process.env.SENTRY_AUTH_TOKEN,
       sourcemaps: {
         // Keep maps until post-build New Relic upload runs, then delete there.

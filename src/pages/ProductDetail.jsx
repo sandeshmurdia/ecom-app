@@ -185,7 +185,9 @@ const ProductDetail = () => {
       }
       
       // Add to cart successfully
-      addToCart({
+      // Await to ensure any future async errors don't become unhandled promise rejections.
+      // `addToCart` currently resolves to a boolean success flag.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
@@ -209,7 +211,8 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
+      // Await to ensure cart state is updated before redirecting to checkout.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
