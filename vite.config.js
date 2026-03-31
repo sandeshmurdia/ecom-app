@@ -1,5 +1,8 @@
 import { defineConfig } from "vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+// `process` isn't available in the browser, but Vite config runs in Node. ESLint's `no-undef`
+// can still flag it, so we explicitly import it for clarity and lint correctness.
+import process from "node:process";
 export default defineConfig({
   build: {
     // Use visible sourcemaps so localhost stack traces resolve to original file names.

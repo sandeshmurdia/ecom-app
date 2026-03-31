@@ -27,9 +27,9 @@ import {
 const About = () => {
 
 
-  // Handle team member click - removed intentional error throwing
-  const handleTeamMemberClick = (member) => {
-    // Team member click functionality can be implemented here
+  // Handle team member click - placeholder for future behavior
+  const handleTeamMemberClick = () => {
+    // No-op: reserved for future enhancement (e.g., open profile modal)
   };
 
   const values = [

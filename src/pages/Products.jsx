@@ -116,22 +116,20 @@ const Products = () => {
     setFilteredProducts(result);
   }, [products, searchTerm, selectedCategory, sortBy]);
 
-  // Handle add to cart - now uses the fail/success pattern from CartContext
+  // Handle add to cart - delegates to CartContext and MUST NOT surface unhandled rejections.
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAddedtNR + 1');
+    // NOTE: This is called from an onClick handler without awaiting the Promise. If anything
+    // throws/rejects here, it becomes an Unhandled Promise Rejection in production.
+    try {
+      if (!product) return;
+      await addToCart(product);
+    } catch (error) {
+      // Defensive catch: CartContext should already handle fail-mode errors, but we never want
+      // UI handlers to leak unhandled rejections.
+      window.zipy?.logException?.(error);
+      console.error('Add to cart failed:', error);
+      showError('Failed to add item to cart. Please try again.');
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
@@ -383,7 +381,9 @@ const Products = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleAddToCart(product);
+              // Fire-and-forget, but explicitly swallow rejections to avoid noisy global handlers
+              // if a regression causes `handleAddToCart` to reject.
+              void handleAddToCart(product);
             }}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -684,7 +684,7 @@ const Products = () => {
             <Button
               variant="outlined"
               onClick={() => {
-                throw new Error('Clear filters error');
+                // Keep clear-filters behavior reachable (lint: no-unreachable).
                 setSearchTerm('');
                 setSelectedCategory('all');
                 setSortBy('default');

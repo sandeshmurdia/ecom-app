@@ -35,6 +35,10 @@ const ShippingForm = ({
   isComplete = false,
   showValidation = false 
 }) => {
+  // NOTE: `showValidation` is part of the public component API used by the checkout flow.
+  // It may not be used in this component yet, but we keep it to avoid breaking callers.
+  const _SHOW_VALIDATION = showValidation;
+
   const [showHelp, setShowHelp] = useState({});
 
   // Enhanced change handler with validation feedback
