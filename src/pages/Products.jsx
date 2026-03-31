@@ -684,7 +684,7 @@ const Products = () => {
             <Button
               variant="outlined"
               onClick={() => {
-                throw new Error('Clear filters erroreeeee');
+                throw new Error('Clear filters errorssss');
                 setSearchTerm('');
                 setSelectedCategory('all');
                 setSortBy('default');
