@@ -213,6 +213,43 @@ const Products = () => {
     setSortBy(newSortBy);
   };
 
+  // Clear all filters - previously this path threw unconditionally, crashing the page on click.
+  // Keep behavior consistent with the rest of the page: fail mode simulates a failure (and is caught by the caller),
+  // success mode resets filter state to defaults without disrupting product loading/error state.
+  const handleClearFilters = async () => {
+    const failModeEnabled = attemptTracker.getFailMode();
+
+    // Lightweight trace to map user flows when debugging filter issues.
+    console.info('[Products] Clear filters clicked', {
+      failModeEnabled,
+      hasSearchTerm: Boolean(searchTerm.trim()),
+      selectedCategory,
+      sortBy,
+      productsCount: products.length,
+      filteredProductsCount: filteredProducts.length,
+    });
+
+    if (failModeEnabled) {
+      const errorMessage = 'Failed to clear filters. Please try again.';
+      showError(errorMessage);
+
+      // Keep the "simulate failure" contract used elsewhere: make a request and then surface a real JS exception.
+      await fetch('/api/products/clear-filters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ searchTerm, selectedCategory, sortBy }),
+      });
+
+      // Trigger a genuine TypeError
+      const notAFunction = null;
+      notAFunction();
+    }
+
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSortBy('default');
+  };
+
   // Scroll to top
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,11 +720,13 @@ const Products = () => {
             </Typography>
             <Button
               variant="outlined"
-              onClick={() => {
-                throw new Error('Failed to clear filters.');
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setSortBy('default');
+              onClick={async () => {
+                try {
+                  await handleClearFilters();
+                } catch (error) {
+                  console.error('Clear filters failed:', error);
+                  // Error is already surfaced via snackbar in fail mode; avoid crashing the UI.
+                }
               }}
               sx={{ borderRadius: 2 }}
             >
