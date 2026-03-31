@@ -27,10 +27,9 @@ import {
 const About = () => {
 
 
-  // Handle team member click - removed intentional error throwing
-  const handleTeamMemberClick = (member) => {
-    // Team member click functionality can be implemented here
-  };
+  // Handle team member click.
+  // Intentionally a no-op for now: keeping the click target for UX (hover/cursor) without side effects.
+  const handleTeamMemberClick = () => {};
 
   const values = [
     {

@@ -119,19 +119,39 @@ const Products = () => {
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
     const failModeEnabled = attemptTracker.getFailMode();
+    // Guard against unexpected/partial product objects to avoid runtime crashes.
+    // This is defensive because product cards are data-driven and can be impacted by API shape changes.
+    if (!product || !product.id) {
+      showError('Unable to add item to cart. Please refresh and try again.');
+      return;
+    }
+
     if (failModeEnabled) {
       const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
       showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAddedtNR + 1');
+      try {
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product.id, quantity: 1 }),
+        });
+        // Important: Avoid intentionally throwing an unhandled error from an async handler.
+        // In production this surfaces as an "Unhandled Promise Rejection" and degrades user experience/observability.
+        throw new Error('Simulated add-to-cart failure (fail mode enabled)');
+      } catch (error) {
+        console.error('Add to cart failed (fail mode):', error);
+        // Error is already surfaced via snackbar above.
+        return;
+      }
     }
+
     // Normal flow - delegate to CartContext
-    await addToCart(product);
+    try {
+      await addToCart(product);
+    } catch (error) {
+      console.error('Add to cart failed:', error);
+      showError(`Failed to add ${product.title} to cart. Please try again.`);
+    }
   };
 
   // Handle search input change - implements fail/success pattern with debouncing
@@ -383,7 +403,10 @@ const Products = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleAddToCart(product);
+              // Avoid "unhandledrejection" by ensuring any async error is caught.
+              handleAddToCart(product).catch((error) => {
+                console.error('Add to cart handler failed:', error);
+              });
             }}
             onMouseDown={(e) => {
               e.preventDefault();

@@ -1,5 +1,7 @@
 import { defineConfig } from "vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+// `process.env.*` is used for build-time configuration; declare `process` as a global for ESLint.
+/* global process */
 export default defineConfig({
   build: {
     // Use visible sourcemaps so localhost stack traces resolve to original file names.

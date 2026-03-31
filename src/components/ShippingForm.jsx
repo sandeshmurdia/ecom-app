@@ -33,7 +33,7 @@ const ShippingForm = ({
   onShippingChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false 
+  showValidation: _SHOW_VALIDATION = false // Intentionally unused: kept for API compatibility with parent stepper.
 }) => {
   const [showHelp, setShowHelp] = useState({});
 

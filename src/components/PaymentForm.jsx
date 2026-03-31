@@ -39,6 +39,10 @@ const PaymentForm = ({
   const [showCvv, setShowCvv] = useState(false);
   const [showHelp, setShowHelp] = useState({});
 
+  // Reserved for future UX improvements (e.g., only show validation hints after a submit attempt).
+  // Using `void` prevents unused-prop lint errors without changing runtime behavior.
+  void showValidation;
+
   // Enhanced change handler with formatting
   const handleFieldChange = useCallback((field) => (event) => {
     let value = event.target.value;

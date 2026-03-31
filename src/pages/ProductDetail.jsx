@@ -169,15 +169,13 @@ const ProductDetail = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ productId: safeProduct.id, quantity }),
           });
-          // Intentional runtime TypeError to look like a genuine failure
-          const bogus = undefined;
-          // eslint-disable-next-line no-unused-vars
-          const value = bogus.value;
+          // Important: avoid intentionally throwing an unhandled error from an async handler.
+          // In production this surfaces as an "Unhandled Promise Rejection" and degrades UX/observability.
+          throw new Error('Simulated add-to-cart failure (fail mode enabled)');
         } catch (error) {
           window.zipy?.logException?.(error);
           console.error(error);
           showError(`Failed to add ${safeProduct.title} to cart. Please try again.`);
-          return;
         } finally {
           setAddingToCart(false);
         }
@@ -185,13 +183,13 @@ const ProductDetail = () => {
       }
       
       // Add to cart successfully
-      addToCart({
+      // Await CartContext so any errors are handled within this try/catch.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
         image: safeProduct.image,
-        quantity: quantity,
-      });
+      }, quantity);
       
       showSuccess(`${safeProduct.title} added to cart (${quantity} ${quantity === 1 ? 'item' : 'items'})`);
       
@@ -209,13 +207,12 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
         image: safeProduct.image,
-        quantity: quantity,
-      });
+      }, quantity);
       // Navigate to checkout
       navigate('/checkout');
     } catch (error) {
