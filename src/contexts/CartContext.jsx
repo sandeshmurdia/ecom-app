@@ -40,8 +40,27 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('ecommerce_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
+  const isValidProductForCart = (product) => {
+    // Reason: runtime errors from missing product properties should not bubble as unhandled promise
+    // rejections from UI event handlers. We validate early and fail gracefully with user feedback.
+    return Boolean(product && (product.id ?? product.id === 0) && product.title && product.price !== undefined);
+  };
+
   // Add item to cart with quantity management - implements fail/success pattern
   const addToCart = async (product, quantity = 1) => {
+    if (!isValidProductForCart(product)) {
+      showError('Unable to add item to cart. Please refresh and try again.');
+      console.warn('[CartContext] addToCart called with invalid product', { product });
+      return false;
+    }
+
+    const normalizedQuantity = Number.isFinite(quantity) ? Math.floor(quantity) : 1;
+    if (normalizedQuantity <= 0) {
+      showError('Quantity must be at least 1.');
+      console.warn('[CartContext] addToCart called with invalid quantity', { quantity, productId: product.id });
+      return false;
+    }
+
     // Check if fail mode is enabled from navbar checkbox
     const failModeEnabled = attemptTracker.getFailMode();
     
@@ -49,13 +68,20 @@ export const CartProvider = ({ children }) => {
     if (failModeEnabled) {
       const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
       showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity }),
-      });
-      // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
-      eval('requestedAdditionalItem + 1');
+      try {
+        await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product.id, quantity: normalizedQuantity }),
+        });
+        // Intentional runtime error for test mode, but DO NOT allow it to escape and become an
+        // unhandled promise rejection (seen in production from UI callers not awaiting addToCart).
+        eval('requestedAdditionalItem + 1');
+      } catch (error) {
+        window.zipy?.logException?.(error);
+        console.error('[CartContext] addToCart fail-mode error (suppressed):', error);
+      }
+      return false;
     }
     
     // Success - add item to cart (only reaches here if fail mode is disabled)
@@ -66,12 +92,12 @@ export const CartProvider = ({ children }) => {
         // Update quantity if item already exists
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: item.quantity + normalizedQuantity }
             : item
         );
       } else {
         // Add new item to cart
-        return [...prevItems, { ...product, quantity }];
+        return [...prevItems, { ...product, quantity: normalizedQuantity }];
       }
     });
     

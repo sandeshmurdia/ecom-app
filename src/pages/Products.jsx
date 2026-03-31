@@ -118,20 +118,22 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
-    const failModeEnabled = attemptTracker.getFailMode();
-    if (failModeEnabled) {
-      const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
-      showError(errorMessage);
-      await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAddedtNR + 1');
+    // Delegate to CartContext for both normal and "fail mode" flows.
+    // Reason: this prevents intentional runtime errors (used for testing) from escaping as unhandled
+    // promise rejections when callers forget to await/catch (a production issue we saw in Add to Cart).
+    try {
+      const ok = await addToCart(product);
+      if (!ok) {
+        // CartContext already surfaced the user-facing error; keep this for observability.
+        console.warn('[Products] addToCart returned false', { productId: product?.id });
+      }
+    } catch (error) {
+      // Defensive: CartContext is expected to handle errors, but never allow an async handler to
+      // bubble a rejection to the global unhandledrejection handler.
+      window.zipy?.logException?.(error);
+      console.error('[Products] Unexpected addToCart failure:', error);
+      showError('Failed to add item to cart. Please try again.');
     }
-    // Normal flow - delegate to CartContext
-    await addToCart(product);
   };
 
   // Handle search input change - implements fail/success pattern with debouncing

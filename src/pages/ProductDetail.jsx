@@ -185,13 +185,21 @@ const ProductDetail = () => {
       }
       
       // Add to cart successfully
-      addToCart({
+      // Await to ensure any async failure (including "fail mode" testing errors) is handled here
+      // and never becomes a global unhandled promise rejection.
+      const ok = await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
         image: safeProduct.image,
         quantity: quantity,
       });
+
+      if (!ok) {
+        // CartContext already showed an error toast; keep this for observability and early return.
+        console.warn('[ProductDetail] addToCart returned false', { productId: safeProduct.id });
+        return;
+      }
       
       showSuccess(`${safeProduct.title} added to cart (${quantity} ${quantity === 1 ? 'item' : 'items'})`);
       
@@ -209,13 +217,18 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
+      // Await so errors can't escape as unhandled promise rejections.
+      const ok = await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
         image: safeProduct.image,
         quantity: quantity,
       });
+      if (!ok) {
+        console.warn('[ProductDetail] addToCart returned false (buy now)', { productId: safeProduct.id });
+        return;
+      }
       // Navigate to checkout
       navigate('/checkout');
     } catch (error) {
