@@ -28,6 +28,7 @@ const About = () => {
 
 
   // Handle team member click - removed intentional error throwing
+  // eslint-disable-next-line no-unused-vars
   const handleTeamMemberClick = (member) => {
     // Team member click functionality can be implemented here
   };

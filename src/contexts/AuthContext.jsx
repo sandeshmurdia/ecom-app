@@ -6,6 +6,7 @@ import { useSnackbar } from './SnackbarContext';
 const AuthContext = createContext();
 
 // Custom hook to use authentication context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }) => {
 
   // Login function with realistic validation and error handling - implements fail/success pattern
   const login = async (email, password) => {
+    let didShowError = false;
     try {
       setLoading(true);
       
@@ -65,6 +67,7 @@ export const AuthProvider = ({ children }) => {
       if (failModeEnabled) {
         // Make a real API call that will fail
         showError(`Login failed. Please try again.`);
+        didShowError = true;
         
         // Make the API call that will fail
         await fetch('/api/auth/login', {
@@ -97,8 +100,14 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true, user: userData };
     } catch (error) {
-      // console.error('Login error:', error);
-      // throw error;
+      // Reason: callers (e.g. `Login.jsx`) rely on `login()` rejecting on failure to prevent navigation.
+      // We still show a snackbar for UX consistency, but only once in fail-mode paths.
+      const message = error?.message || 'Login failed. Please try again.';
+      if (!didShowError) {
+        showError(message);
+      }
+      console.error('Login error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }

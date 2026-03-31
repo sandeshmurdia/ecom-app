@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Snackbar, Alert, Box } from '@mui/material';
+import { Snackbar, Alert } from '@mui/material';
 
 // Create snackbar context for managing global notifications
 const SnackbarContext = createContext();
 
 // Custom hook to use snackbar context
+// eslint-disable-next-line react-refresh/only-export-components -- Hook export is safe; provider is the component.
 export const useSnackbar = () => {
   const context = useContext(SnackbarContext);
   if (!context) {

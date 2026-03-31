@@ -32,7 +32,9 @@ const PaymentForm = ({
   onPaymentChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false,
+  // showValidation is reserved for future UX enhancements (e.g., showing all field errors on submit).
+  // Reason: keep API stable for parent components without introducing unused-var lint failures.
+  showValidation: _showValidation = false,
   isProcessing = false 
 }) => {
   const [showCardNumber, setShowCardNumber] = useState(false);

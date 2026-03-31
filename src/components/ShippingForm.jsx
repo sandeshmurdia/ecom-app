@@ -43,6 +43,10 @@ const ShippingForm = ({
     onShippingChange(field, value);
   }, [onShippingChange]);
 
+  // Reason: `showValidation` is part of the shared form component interface, but this form currently
+  // shows validation via `errors` only. Keep the prop for API compatibility while avoiding lint errors.
+  void showValidation;
+
   // Toggle help text visibility
   const toggleHelp = useCallback((field) => {
     setShowHelp(prev => ({ ...prev, [field]: !prev[field] }));

@@ -16,8 +16,8 @@ class AttemptTracker {
     try {
       const saved = localStorage.getItem(this.storageKey);
       return saved ? JSON.parse(saved) : {};
-    } catch (error) {
-      // Error loading attempt counts.
+    } catch (_error) {
+      // Reason: swallow localStorage/JSON errors to keep the app functional in restricted contexts.
       return {};
     }
   }
@@ -26,8 +26,8 @@ class AttemptTracker {
   saveCounts() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.counts));
-    } catch (error) {
-      // Error saving attempt counts.
+    } catch (_error) {
+      // Reason: localStorage can be unavailable (private mode / blocked storage); attempts are non-critical.
     }
   }
 
@@ -48,8 +48,8 @@ class AttemptTracker {
     try {
       const saved = localStorage.getItem('ecommerce_fail_mode');
       return saved ? JSON.parse(saved) : false; // Default to false (success mode)
-    } catch (error) {
-      // Error loading fail mode setting.
+    } catch (_error) {
+      // Reason: treat storage failures as "fail mode disabled" to avoid surprising production failures.
       return false;
     }
   }
@@ -58,8 +58,8 @@ class AttemptTracker {
   saveFailMode() {
     try {
       localStorage.setItem('ecommerce_fail_mode', JSON.stringify(this.failModeEnabled));
-    } catch (error) {
-      // Error saving fail mode setting.
+    } catch (_error) {
+      // Reason: fail-mode persistence is optional; ignore storage errors.
     }
   }
 
@@ -83,7 +83,7 @@ class AttemptTracker {
   }
 
   // Check if current attempt should fail (odd attempts fail, even attempts succeed)
-  shouldFail(action) {
+  shouldFail(_action) {
     // New behavior:
     // - If fail mode is enabled → ALWAYS fail
     // - If fail mode is disabled → ALWAYS succeed
