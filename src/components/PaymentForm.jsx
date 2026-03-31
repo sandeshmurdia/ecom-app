@@ -32,12 +32,14 @@ const PaymentForm = ({
   onPaymentChange, 
   errors = {}, 
   isComplete = false,
-  showValidation = false,
+  // `showValidation` is accepted for parity with Checkout but not used yet in this component.
   isProcessing = false 
 }) => {
   const [showCardNumber, setShowCardNumber] = useState(false);
   const [showCvv, setShowCvv] = useState(false);
   const [showHelp, setShowHelp] = useState({});
+  // `_showValidation` is intentionally unused for now: callers may pass it to align API with other forms,
+  // and we keep it reserved to gate field-level error UI in the future without a breaking prop change.
 
   // Enhanced change handler with formatting
   const handleFieldChange = useCallback((field) => (event) => {
