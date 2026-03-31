@@ -684,7 +684,7 @@ const Products = () => {
             <Button
               variant="outlined"
               onClick={() => {
-                throw new Error('Clear filters errorssss');
+                // Root fix: "Clear Filters" must reset state, not intentionally throw.
                 setSearchTerm('');
                 setSelectedCategory('all');
                 setSortBy('default');
