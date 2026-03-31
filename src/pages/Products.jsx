@@ -213,6 +213,39 @@ const Products = () => {
     setSortBy(newSortBy);
   };
 
+  // Handle "Clear Filters" action.
+  // Reason: this previously threw an unhandled Error from the button onClick, crashing the page.
+  // This keeps the UI responsive and aligns with the existing fail-mode pattern used elsewhere.
+  const handleClearFilters = async () => {
+    const failModeEnabled = attemptTracker.getFailMode();
+
+    if (failModeEnabled) {
+      const errorMessage = 'Failed to clear filters. Please try again.';
+      showError(errorMessage);
+      await fetch('/api/products/clear-filters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          searchTerm,
+          selectedCategory,
+          sortBy,
+        }),
+      });
+      // Trigger a genuine DOMException (consistent with other fail-mode branches).
+      throw new DOMException('Invalid state for clear filters', 'InvalidStateError');
+    }
+
+    if (import.meta?.env?.DEV) {
+      console.debug('[Products] Clearing filters', {
+        previous: { searchTerm, selectedCategory, sortBy },
+      });
+    }
+
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSortBy('default');
+  };
+
   // Scroll to top
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,11 +716,13 @@ const Products = () => {
             </Typography>
             <Button
               variant="outlined"
-              onClick={() => {
-                throw new Error('Clear filters erroreeeee');
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setSortBy('default');
+              onClick={async () => {
+                try {
+                  await handleClearFilters();
+                } catch (error) {
+                  console.error('Clear filters failed:', error);
+                  // Error is already surfaced via showError in fail-mode.
+                }
               }}
               sx={{ borderRadius: 2 }}
             >
