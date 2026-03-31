@@ -471,6 +471,7 @@ const ProtectedRoute = ({ children }) => {
 const AppLayout = () => {
   const { isAuthenticated } = useAuth();
 
+  
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
