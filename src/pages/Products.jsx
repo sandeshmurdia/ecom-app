@@ -213,6 +213,40 @@ const Products = () => {
     setSortBy(newSortBy);
   };
 
+  // Clear all active filters/search back to defaults.
+  // Reason: Prevent unhandled UI exceptions (which break the page) while preserving the app's
+  // fail-mode testing pattern used by other filter actions.
+  const handleClearFilters = async () => {
+    try {
+      // If nothing is applied, avoid extra state churn.
+      if (!searchTerm && selectedCategory === 'all' && sortBy === 'default') {
+        return;
+      }
+
+      const failModeEnabled = attemptTracker.getFailMode();
+      if (failModeEnabled) {
+        const errorMessage = 'Failed to clear filters. Please try again.';
+        showError(errorMessage);
+
+        // Keep the current UI state to visually reflect the failure.
+        await fetch('/api/products/filters/clear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        // Trigger a real runtime error, but ensure it's handled locally (no UI crash).
+        throw new Error(errorMessage);
+      }
+
+      setSearchTerm('');
+      setSelectedCategory('all');
+      setSortBy('default');
+    } catch (err) {
+      // Do not rethrow: click handlers should never crash the page.
+      console.error('Clear filters failed:', err);
+    }
+  };
+
   // Scroll to top
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,11 +717,8 @@ const Products = () => {
             </Typography>
             <Button
               variant="outlined"
-              onClick={() => {
-                throw new Error('Failed to clear filters. Please try again.');
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setSortBy('default');
+              onClick={async () => {
+                await handleClearFilters();
               }}
               sx={{ borderRadius: 2 }}
             >
