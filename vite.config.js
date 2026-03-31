@@ -2,6 +2,8 @@ import { defineConfig } from "vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 export default defineConfig({
   build: {
+    // Avoid generating the default dist folder; emit build artifacts into build/.
+    outDir: "build",
     // Use visible sourcemaps so localhost stack traces resolve to original file names.
     sourcemap: true,
     // Keep production bundles readable for debugging in browser and New Relic contexts.
