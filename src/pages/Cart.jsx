@@ -67,7 +67,7 @@ const Cart = () => {
   const handleCheckout = async () => {
     // Check if fail mode is enabled from navbar checkbox
     const failModeEnabled = attemptTracker.getFailMode();
-    console.log('failModeEnabled in cart', failModeEnabled);
+    console.log('failModeEnabled ssin cart', failModeEnabled);
 
     console.log('failModeEnabledddd', failModeEnabled);
     // Generate error based on checkbox flag in navbar
