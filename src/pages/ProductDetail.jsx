@@ -185,7 +185,8 @@ const ProductDetail = () => {
       }
       
       // Add to cart successfully
-      addToCart({
+      // Await CartContext to ensure any runtime/network failures do not surface as unhandled promise rejections.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,
@@ -209,7 +210,8 @@ const ProductDetail = () => {
     
     try {
       // Add to cart first
-      addToCart({
+      // Await CartContext so any failure is caught here and doesn't become an unhandled promise rejection.
+      await addToCart({
         id: safeProduct.id,
         title: safeProduct.title,
         price: safeProduct.price,

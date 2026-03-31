@@ -35,6 +35,11 @@ const ShippingForm = ({
   isComplete = false,
   showValidation = false 
 }) => {
+  // `showValidation` is currently driven by the parent stepper UI. We keep it to preserve the
+  // public component API, but this form relies on `errors` for inline feedback today.
+  void showValidation;
+  // `showValidation` is intentionally accepted for API compatibility with Checkout's stepper UI.
+  // This component currently relies on `errors` to drive inline feedback.
   const [showHelp, setShowHelp] = useState({});
 
   // Enhanced change handler with validation feedback

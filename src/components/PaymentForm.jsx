@@ -32,6 +32,9 @@ const PaymentForm = ({
   onPaymentChange, 
   errors = {}, 
   isComplete = false,
+  // NOTE: kept for API compatibility with parent checkout flow; intentionally unused here.
+  // Some parent implementations may pass this to conditionally show inline validation states.
+  // eslint-disable-next-line no-unused-vars
   showValidation = false,
   isProcessing = false 
 }) => {

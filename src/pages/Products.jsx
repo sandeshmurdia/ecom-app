@@ -118,6 +118,9 @@ const Products = () => {
 
   // Handle add to cart - now uses the fail/success pattern from CartContext
   const handleAddToCart = async (product) => {
+    // NOTE: This handler is awaited/caught by the click handler below to avoid unhandled promise rejections
+    // surfacing in production error monitoring.
+    if (!product) return;
     const failModeEnabled = attemptTracker.getFailMode();
     if (failModeEnabled) {
       const errorMessage = `Failed to add ${product.title} to cart. Please try again.`;
@@ -127,8 +130,8 @@ const Products = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: product.id, quantity: 1 }),
       });
-      // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAddedtNR + 1');
+      // Trigger a genuine ReferenceError via eval (avoids static analysis/no-undef while still runtime failing)
+      eval('itemToBeAddedInCart + 1');
     }
     // Normal flow - delegate to CartContext
     await addToCart(product);
@@ -380,10 +383,18 @@ const Products = () => {
             variant="contained"
             color="primary"
             startIcon={<CartIcon />}
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleAddToCart(product);
+              // Important: await/catch the async handler to prevent "Unhandled Promise Rejection" in production.
+              try {
+                await handleAddToCart(product);
+              } catch (error) {
+                window.zipy?.logException?.(error);
+                console.error('Add to cart failed:', error);
+                // CartContext/handleAddToCart already shows a user-facing error in fail-mode; this is a safe fallback.
+                showError('Failed to add item to cart. Please try again.');
+              }
             }}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -684,7 +695,6 @@ const Products = () => {
             <Button
               variant="outlined"
               onClick={() => {
-                throw new Error('Clear filters erroreeeee');
                 setSearchTerm('');
                 setSelectedCategory('all');
                 setSortBy('default');

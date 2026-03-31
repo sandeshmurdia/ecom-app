@@ -16,8 +16,8 @@ class AttemptTracker {
     try {
       const saved = localStorage.getItem(this.storageKey);
       return saved ? JSON.parse(saved) : {};
-    } catch (error) {
-      // Error loading attempt counts.
+    } catch {
+      // Swallowing is intentional: attempt tracking is non-critical and must not block the app.
       return {};
     }
   }
@@ -26,8 +26,8 @@ class AttemptTracker {
   saveCounts() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.counts));
-    } catch (error) {
-      // Error saving attempt counts.
+    } catch {
+      // Swallowing is intentional: storage may be unavailable (private mode, quota, etc.).
     }
   }
 
@@ -48,8 +48,8 @@ class AttemptTracker {
     try {
       const saved = localStorage.getItem('ecommerce_fail_mode');
       return saved ? JSON.parse(saved) : false; // Default to false (success mode)
-    } catch (error) {
-      // Error loading fail mode setting.
+    } catch {
+      // Swallowing is intentional: fail mode is non-critical and should default to disabled.
       return false;
     }
   }
@@ -58,8 +58,8 @@ class AttemptTracker {
   saveFailMode() {
     try {
       localStorage.setItem('ecommerce_fail_mode', JSON.stringify(this.failModeEnabled));
-    } catch (error) {
-      // Error saving fail mode setting.
+    } catch {
+      // Swallowing is intentional: storage may be unavailable.
     }
   }
 
@@ -72,6 +72,13 @@ class AttemptTracker {
 
   // Explicitly set fail mode
   setFailMode(enabled) {
+    // Fail-mode is a debug/testing feature. Never allow it to be enabled in production builds
+    // to avoid intentionally injected runtime errors impacting real users.
+    if (import.meta?.env?.PROD) {
+      this.failModeEnabled = false;
+      this.saveFailMode();
+      return this.failModeEnabled;
+    }
     this.failModeEnabled = Boolean(enabled);
     this.saveFailMode();
     return this.failModeEnabled;
@@ -79,11 +86,13 @@ class AttemptTracker {
 
   // Get current fail mode status
   getFailMode() {
+    // Ensure production builds cannot end up with fail-mode enabled via persisted localStorage.
+    if (import.meta?.env?.PROD) return false;
     return this.failModeEnabled;
   }
 
   // Check if current attempt should fail (odd attempts fail, even attempts succeed)
-  shouldFail(action) {
+  shouldFail() {
     // New behavior:
     // - If fail mode is enabled → ALWAYS fail
     // - If fail mode is disabled → ALWAYS succeed

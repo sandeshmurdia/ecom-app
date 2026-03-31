@@ -19,7 +19,9 @@ export default defineConfig({
     sentryVitePlugin({
       org: "zipy-0f",
       project: "node",
-      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Vite config runs in Node; ESLint "no-undef" doesn't know about Node globals by default.
+      // `process.env.SENTRY_AUTH_TOKEN` is required for CI/source map upload.
+      authToken: globalThis.process?.env?.SENTRY_AUTH_TOKEN,
       sourcemaps: {
         // Keep maps until post-build New Relic upload runs, then delete there.
         filesToDeleteAfterUpload: [],

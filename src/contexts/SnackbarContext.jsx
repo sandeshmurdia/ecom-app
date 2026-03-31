@@ -5,6 +5,7 @@ import { Snackbar, Alert, Box } from '@mui/material';
 const SnackbarContext = createContext();
 
 // Custom hook to use snackbar context
+// eslint-disable-next-line react-refresh/only-export-components -- Hook export is intentional for Context consumers.
 export const useSnackbar = () => {
   const context = useContext(SnackbarContext);
   if (!context) {
