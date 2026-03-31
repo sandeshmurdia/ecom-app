@@ -128,7 +128,7 @@ const Products = () => {
         body: JSON.stringify({ productId: product.id, quantity: 1 }),
       });
       // Trigger a genuine ReferenceError via eval
-      eval('itemToBeAddedInCartNR + 1');
+      eval('itemToBeAddedtNR + 1');
     }
     // Normal flow - delegate to CartContext
     await addToCart(product);
