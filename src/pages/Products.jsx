@@ -213,6 +213,39 @@ const Products = () => {
     setSortBy(newSortBy);
   };
 
+  // Clear-filters supports the same fail/success pattern as other controls, but must not hard-crash the page.
+  const handleClearFilters = async () => {
+    const failModeEnabled = attemptTracker.getFailMode();
+    console.info('[Products] Clear filters requested', {
+      failModeEnabled,
+      searchTerm,
+      selectedCategory,
+      sortBy,
+    });
+
+    if (failModeEnabled) {
+      const errorMessage = 'Failed to clear filters. Please try again.';
+      showError(errorMessage);
+
+      try {
+        await fetch('/api/products/clear-filters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ searchTerm, selectedCategory, sortBy }),
+        });
+      } catch (networkError) {
+        console.warn('[Products] Clear filters tracking request failed:', networkError);
+      }
+
+      // Trigger a genuine Error in fail mode so monitoring still captures the failure scenario.
+      throw new Error(errorMessage);
+    }
+
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSortBy('default');
+  };
+
   // Scroll to top
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,11 +716,13 @@ const Products = () => {
             </Typography>
             <Button
               variant="outlined"
-              onClick={() => {
-                throw new Error('Failed to clear filters. Please try again.');
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setSortBy('default');
+              onClick={async () => {
+                try {
+                  await handleClearFilters();
+                } catch (clearError) {
+                  console.error('Clear filters failed:', clearError);
+                  // Error is already surfaced to the user via Snackbar in fail mode.
+                }
               }}
               sx={{ borderRadius: 2 }}
             >
