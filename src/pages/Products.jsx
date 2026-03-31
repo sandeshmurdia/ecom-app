@@ -213,6 +213,29 @@ const Products = () => {
     setSortBy(newSortBy);
   };
 
+  // Handle clearing all filters - implements fail/success pattern
+  const handleClearFilters = async () => {
+    // Check if fail mode is enabled from navbar checkbox
+    const failModeEnabled = attemptTracker.getFailMode();
+    
+    // Generate error based on checkbox flag in navbar
+    if (failModeEnabled) {
+      const errorMessage = 'Failed to clear filters. Please try again.';
+      showError(errorMessage);
+      await fetch('/api/products/clear-filters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      // Trigger a genuine Error (matches original demo intent) while keeping it contained by the caller.
+      throw new Error('Clear filters erroreeeee');
+    }
+
+    // Success - reset all filters (only reaches here if fail mode is disabled)
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSortBy('default');
+  };
+
   // Scroll to top
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,11 +706,13 @@ const Products = () => {
             </Typography>
             <Button
               variant="outlined"
-              onClick={() => {
-                throw new Error('Clear filters erroreeeee');
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setSortBy('default');
+              onClick={async () => {
+                try {
+                  await handleClearFilters();
+                } catch (error) {
+                  console.error('Clear filters failed:', error);
+                  // Error is already handled by handleClearFilters
+                }
               }}
               sx={{ borderRadius: 2 }}
             >
