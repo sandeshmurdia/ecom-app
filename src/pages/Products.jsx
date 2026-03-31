@@ -213,6 +213,31 @@ const Products = () => {
     setSortBy(newSortBy);
   };
 
+  // Handle clear filters - implements fail/success pattern.
+  // Reason: the previous inline handler intentionally threw an error unconditionally, preventing filters
+  // from being cleared and causing an uncaught UI exception (see reported stack trace).
+  const handleClearFilters = async () => {
+    // Check if fail mode is enabled from navbar checkbox.
+    const failModeEnabled = attemptTracker.getFailMode();
+
+    // Generate error based on checkbox flag in navbar.
+    if (failModeEnabled) {
+      const errorMessage = 'Failed to clear filters. Please try again.';
+      showError(errorMessage);
+      await fetch('/api/products/clear-filters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      // Trigger a genuine Error to simulate the failure path, consistent with other handlers.
+      throw new Error('Clear filters erroreeeee');
+    }
+
+    // Success - reset filter state back to defaults.
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSortBy('default');
+  };
+
   // Scroll to top
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,11 +708,13 @@ const Products = () => {
             </Typography>
             <Button
               variant="outlined"
-              onClick={() => {
-                throw new Error('Clear filters errorssss');
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setSortBy('default');
+              onClick={async () => {
+                try {
+                  await handleClearFilters();
+                } catch (error) {
+                  console.error('Clear filters failed:', error);
+                  // Error is already handled by handleClearFilters.
+                }
               }}
               sx={{ borderRadius: 2 }}
             >
